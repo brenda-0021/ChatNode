@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brenda's Chatsito</title>
+    <script type="module">
+      import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js";
+
+      const getUsername = async () => {
+        const username = localStorage.getItem("username");
+        if (username) {
+          console.log(`User existed ${username}`);
+          return username;
+        }
+        const res = await fetch(
+          "https://random-data-api.com/api/users/random_user"
+        );
+        const { username: randomUsername } = await res.json();
+        localStorage.setItem("username", randomUsername);
+        return randomUsername;
+      };
+
+      const socket = io({
+        auth: {
+          username: await getUsername(),
+          serverOffset: 0,
+        },
+      });
+
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const messages = document.getElementById("messages");
+
+      socket.on("chat message", (msg, serverOffset, username) => {
+        const item = `<li class="message">
+          <div class="bubble">
+            <p class="username">${username}</p>
+            <p class="text">${msg}</p>
+          </div>
+        </li>`;
+        messages.insertAdjacentHTML("beforeend", item);
+        socket.auth.serverOffset = serverOffset;
+        messages.scrollTop = messages.scrollHeight;
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        if (input.value) {
+          socket.emit("chat message", input.value);
+          input.value = "";
+        }
+      });
+    </script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --main-bg: #1e1e2e; /* Fondo oscuro */
+        --message-bg: #7d5bae; /* Burbuja de mensaje recibida */
+        --my-message-bg: #7d5bae; /* Burbuja de mensaje propio en morado */
+        --message-text: #e4e4e7; /* Texto de los mensajes recibidos */
+        --my-message-text: #ffffff; /* Texto de los mensajes propios */
+        --username-color: #9f9fbc; /* Color de los nombres de usuario */
+        --chat-width: 350px;
+        --bubble-radius: 20px;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        display: grid;
+        place-content: center;
+        height: 100vh;
+        background-color: var(--main-bg);
+      }
+      #messages {
+        list-style-type: none;
+        padding: 16px;
+        overflow-y: auto;
+        height: 600px;
+        border-radius: 8px;
+        border: 3px solid #6a4fa2;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background-color: #29293d;
+        background-image: radial-gradient(#3a3a50 10%, transparent 10%),
+          radial-gradient(#4d4d66 10%, transparent 10%);
+        background-size: 20px 20px; /* Tamaño del patrón de puntos */
+        background-position: 0 0, 10px 10px;
+      }
+      /* Personalizar la barra de scroll para navegadores WebKit (Chrome, Safari) */
+      #messages::-webkit-scrollbar {
+        width: 15px; /* Ancho de la barra de scroll */
+      }
+
+      #messages::-webkit-scrollbar-track {
+        background: #44475a; /* Fondo del track de scroll */
+      }
+
+      #messages::-webkit-scrollbar-thumb {
+        background-color: #6a4fa2; /* Color de la barra de scroll */
+        border-radius: 20px; /* Bordes redondeados */
+        border: 2px solid #44475a; /* Borde alrededor del thumb para combinar con el tema */
+      }
+      #messages > li {
+        margin-bottom: 10px;
+      }
+      .message {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .message .username {
+        font-size: 0.9rem;
+        color: var(--username-color);
+        margin-bottom: 4px;
+        font-weight: bold;
+      }
+      .bubble {
+        background-color: var(--message-bg);
+        color: var(--message-text);
+        padding: 10px 16px;
+        border-radius: var(--bubble-radius);
+        max-width: 80%;
+        word-wrap: break-word;
+        position: relative;
+        border-radius: 20px 20px 20px 5px;
+      }
+      .bubble .username {
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: var(--username-color);
+        margin-bottom: 4px;
+      }
+      .bubble .text {
+        font-size: 1rem;
+        margin: 0;
+      }
+
+      .bubble.my-message {
+        background-color: var(--my-message-bg);
+        color: var(--my-message-text);
+        align-self: flex-end;
+        border-radius: 20px 20px 5px 20px;
+      }
+      #chat {
+        width: var(--chat-width);
+        display: flex;
+        flex-direction: column;
+      }
+      #form {
+        display: flex;
+        margin-top: 10px;
+      }
+      #input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 9999px;
+        border: 3px solid #6a4fa2;
+        margin-right: 10px;
+        background-color: #44475a;
+        color: var(--my-message-text);
+      }
+      #input:focus {
+        outline: 0;
+      }
+      #form > button {
+        background-color: var(--my-message-bg);
+        color: var(--my-message-text);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 9999px;
+        cursor: pointer;
+      }
+      #form > button:hover {
+        background-color: #6a4fa2;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section id="chat">
+      <ul id="messages"></ul>
+      <form id="form">
+        <input
+          type="text"
+          name="message"
+          id="input"
+          placeholder="Type a message..."
+          autocomplete="off"
+        />
+        <button type="submit">Enviar</button>
+      </form>
+    </section>
+  </body>
+</html>
