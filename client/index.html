@@ -31,10 +31,12 @@
       const form = document.getElementById("form");
       const input = document.getElementById("input");
       const messages = document.getElementById("messages");
+      const currentUser = localStorage.getItem("username");
 
       socket.on("chat message", (msg, serverOffset, username) => {
+        const isMyMessage = username === currentUser;
         const item = `<li class="message">
-          <div class="bubble">
+          <div class="bubble ${isMyMessage ? "my-message" : ""}">
             <p class="username">${username}</p>
             <p class="text">${msg}</p>
           </div>
@@ -64,7 +66,7 @@
       :root {
         --main-bg: #1e1e2e; /* Fondo oscuro */
         --message-bg: #7d5bae; /* Burbuja de mensaje recibida */
-        --my-message-bg: #7d5bae; /* Burbuja de mensaje propio en morado */
+        --my-message-bg: #533380; /* Burbuja de mensaje propio en morado */
         --message-text: #e4e4e7; /* Texto de los mensajes recibidos */
         --my-message-text: #ffffff; /* Texto de los mensajes propios */
         --username-color: #9f9fbc; /* Color de los nombres de usuario */
